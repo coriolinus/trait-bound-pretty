@@ -58,3 +58,12 @@ fn parse_item_tuple(input: &str) {
     assert!(result.is_ok());
     println!("{}", result.unwrap().pretty());
 }
+
+#[test]
+fn can_parse_non_static_str() {
+    let input = format!("{}", "Vec<(Item<'a>, &'static str)>");
+    let result = ItemParser::new().parse(&input);
+    println!("{:#?}", result);
+    assert!(result.is_ok());
+    println!("{}", result.unwrap().pretty());
+}
