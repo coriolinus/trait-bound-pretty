@@ -1,0 +1,48 @@
+use super::{Bound, Item};
+
+grammar;
+
+Ident: &'input str = r"\w+";
+
+Name: Vec<&'input str> = {
+    <i:Ident> => vec![i],
+    <qualifier:Ident> "::" <mut name:Name> => {
+        name.push(qualifier);
+        name
+    },
+};
+
+Bound: Bound<'input> = {
+    r"'\w+" => Bound::Lifetime(<>),
+    Item => Bound::Item(<>),
+    <amp:"&"> <lifetime:r"'\w+"> <mut_:"mut"> <item:Item> => Bound::Reference{
+        amp,
+        lifetime,
+        mut_: Some(mut_),
+        item,
+    },
+    <amp:"&"> <lifetime:r"'\w+"> <item:Item> => Bound::Reference{
+        amp,
+        lifetime,
+        mut_: None,
+        item,
+    },
+    "(" <CommaSep<Bound>> ")" => Bound::Tuple(<>),
+}
+
+pub Item: Item<'input> = {
+    <name:Name> => Item {
+        name,
+        generic_bounds: Vec::new(),
+    },
+    <name:Name> "<" <generic_bounds:CommaSep<Bound>> ">" => Item { <> },
+};
+
+// CommaSep requires internal commas only, no trailing
+CommaSep<T>: Vec<T> = {
+    T => vec![<>],
+    <mut head:CommaSep<T>> "," <tail:T> => {
+        head.push(tail);
+        head
+    }
+}
