@@ -15,16 +15,14 @@ Name: Vec<&'input str> = {
 Bound: Bound<'input> = {
     r"'\w+" => Bound::Lifetime(<>),
     Item => Bound::Item(<>),
-    <amp:"&"> <lifetime:r"'\w+"> <mut_:"mut"> <item:Item> => Bound::Reference{
-        amp,
+    "&" <lifetime:r"'\w+"> "mut" <item:Item> => Bound::Reference{
         lifetime,
-        mut_: Some(mut_),
+        mut_: true,
         item,
     },
-    <amp:"&"> <lifetime:r"'\w+"> <item:Item> => Bound::Reference{
-        amp,
+    "&" <lifetime:r"'\w+"> <item:Item> => Bound::Reference{
         lifetime,
-        mut_: None,
+        mut_: false,
         item,
     },
     "(" <CommaSep<Bound>> ")" => Bound::Tuple(<>),
