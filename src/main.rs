@@ -17,7 +17,12 @@ fn main() -> Result<()> {
     for line in reader.lines() {
         let line = line?;
         let line = line.trim();
-        let item = parser.parse(line)?;
+        let item = parser
+            .parse(line)
+            // the token is bounded on the input lifetime in the error case, and
+            // doesn't live long enough to be returned from main, so let's take
+            // ownership of it so this is possible.
+            .map_err(|err| err.map_token(|token| token.to_string()))?;
         item.pretty_to(&mut writer)?;
     }
     Ok(())
