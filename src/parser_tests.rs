@@ -67,3 +67,12 @@ fn can_parse_non_static_str() {
     assert!(result.is_ok());
     println!("{}", result.unwrap().pretty());
 }
+
+#[test]
+fn can_parse_example_e0277() {
+    let input = "error[E0277]: the trait bound `Arc<sc_service::client::Client<sc_client_db::Backend<sp_runtime::generic::Block<sp_runtime::generic::Header<u32, BlakeTwo256>, OpaqueExtrinsic>>, LocalCallExecutor<sc_client_db::Backend<sp_runtime::generic::Block<sp_runtime::generic::Header<u32, BlakeTwo256>, OpaqueExtrinsic>>, NativeExecutor<Executor>>, sp_runtime::generic::Block<sp_runtime::generic::Header<u32, BlakeTwo256>, OpaqueExtrinsic>, RuntimeApi>>: HeaderBackend<sp_runtime::generic::Block<sp_runtime::generic::Header<u32, BlakeTwo256>, OpaqueExtrinsic>>` is not satisfied";
+    let result = E0277Parser::new().parse(input);
+    println!("{:#?}", result);
+    assert!(result.is_ok());
+    println!("{}", result.unwrap().pretty());
+}

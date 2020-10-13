@@ -1,4 +1,4 @@
-use super::{Bound, Item};
+use super::{Bound, E0277, Item};
 
 grammar;
 
@@ -34,6 +34,11 @@ pub Item: Item<'input> = {
         generic_bounds: Vec::new(),
     },
     <name:Name> "<" <generic_bounds:CommaSep<Bound>> ">" => Item { <> },
+};
+
+// error[E0277]: the trait bound `Arc<sc_service::client::Client<sc_client_db::Backend<sp_runtime::generic::Block<sp_runtime::generic::Header<u32, BlakeTwo256>, OpaqueExtrinsic>>, LocalCallExecutor<sc_client_db::Backend<sp_runtime::generic::Block<sp_runtime::generic::Header<u32, BlakeTwo256>, OpaqueExtrinsic>>, NativeExecutor<Executor>>, sp_runtime::generic::Block<sp_runtime::generic::Header<u32, BlakeTwo256>, OpaqueExtrinsic>, RuntimeApi>>: HeaderBackend<sp_runtime::generic::Block<sp_runtime::generic::Header<u32, BlakeTwo256>, OpaqueExtrinsic>>` is not satisfied
+pub E0277: E0277<'input> = {
+    "error[E0277]: the trait bound `" <item:Item> ":" <trait_bound:Item> "` is not satisfied" => E0277 { <> }
 };
 
 // CommaSep requires internal commas only, no trailing

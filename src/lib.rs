@@ -113,3 +113,28 @@ fn indent<Writer: Write>(indent_level: usize, writer: &mut Writer) -> Result<(),
     }
     Ok(())
 }
+
+#[derive(Debug)]
+pub struct E0277<'a> {
+    item: Item<'a>,
+    trait_bound: Item<'a>,
+}
+
+impl<'a> E0277<'a> {
+    /// Pretty-print this Item into a new string.
+    pub fn pretty(&self) -> String {
+        let mut writer = Vec::new();
+        self.pretty_to(&mut writer)
+            .expect("writing to Vec<u8> should never fail");
+        String::from_utf8(writer).expect("we only ever write valid utf8")
+    }
+
+    /// Pretty-print this Item to the supplied writer.
+    pub fn pretty_to<Writer: Write>(&self, writer: &mut Writer) -> Result<(), std::io::Error> {
+        write!(writer, "error[E0277]: the item:\n{}", INDENT)?;
+        self.item.pretty_internal(1, writer)?;
+        write!(writer, "\ndoes not satisfy the trait bound:\n{}", INDENT)?;
+        self.trait_bound.pretty_internal(1, writer)?;
+        Ok(())
+    }
+}
