@@ -3,7 +3,7 @@ use std::io::{stdin, stdout, BufRead, BufReader, BufWriter, Write};
 use structopt::StructOpt;
 
 use trait_bound_pretty::{
-    parser::E0277Parser,
+    parser::{E0277Parser, ItemParser},
     Pretty,
 };
 
@@ -25,16 +25,17 @@ struct Opt {
     #[structopt(short, long)]
     fail_fast: bool,
 
-    // /// Attempt to parse and print bare items instead of E0277 lines
-    // #[structopt(short, long)]
-    // bare_item: bool,
+    /// Attempt to parse and print bare items instead of E0277 lines
+    #[structopt(short, long)]
+    bare_item: bool,
 }
 
 /// operate as a line-oriented stream editor, pretty-printing recognized inputs
 fn process_lines() -> std::io::Result<()> {
     let opt = Opt::from_args();
 
-    let parser = Box::new(E0277Parser::new());
+    let item_parser = ItemParser::new();
+    let e0277_parser = E0277Parser::new();
 
     let stdin = stdin();
     let reader = stdin.lock();
@@ -46,19 +47,42 @@ fn process_lines() -> std::io::Result<()> {
 
     for line in reader.lines() {
         let line = line?;
-        match parser.parse(line.trim()) {
-            Ok(item) => {
-                item.pretty_to(&mut writer)?;
-                write!(writer, "\n")?;
-            }
-            Err(err) => {
-                if opt.strict {
-                    writeln!(writer, "{:#?}", err)?;
-                } else {
-                    writeln!(writer, "{}", line)?;
+
+        // without a Parser trait, we can't really abstract over this
+        // however, such a trait is non-trivial; see the `parser-trait` branch
+        // for now, just brute-force the issue
+        if opt.bare_item {
+            match item_parser.parse(line.trim()) {
+                Ok(item) => {
+                    item.pretty_to(&mut writer)?;
+                    write!(writer, "\n")?;
                 }
-                if opt.fail_fast {
-                    break;
+                Err(err) => {
+                    if opt.strict {
+                        writeln!(writer, "{:#?}", err)?;
+                    } else {
+                        writeln!(writer, "{}", line)?;
+                    }
+                    if opt.fail_fast {
+                        break;
+                    }
+                }
+            }
+        } else {
+            match e0277_parser.parse(line.trim()) {
+                Ok(item) => {
+                    item.pretty_to(&mut writer)?;
+                    write!(writer, "\n")?;
+                }
+                Err(err) => {
+                    if opt.strict {
+                        writeln!(writer, "{:#?}", err)?;
+                    } else {
+                        writeln!(writer, "{}", line)?;
+                    }
+                    if opt.fail_fast {
+                        break;
+                    }
                 }
             }
         }
@@ -67,7 +91,6 @@ fn process_lines() -> std::io::Result<()> {
 
     Ok(())
 }
-
 
 fn main() {
     // if there's an IO error when processing the lines, then either stdin or stdout was closed.
