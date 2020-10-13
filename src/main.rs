@@ -16,12 +16,12 @@ struct Opt {
     /// Activate strict mode
     ///
     /// Normally, any line of input which can't be parsed is passed through unchanged.
-    /// In strict mode, any line of input which can't be parsed as an E0277 or an Item
-    /// produces an error.
+    /// In strict mode, any line of input which can't be parsed as an E0277 or a Rust
+    /// type produces an error.
     #[structopt(short, long)]
     strict: bool,
 
-    /// If any error is produced, abort instead of continuing at the next line.
+    /// If any parse error is produced, abort instead of continuing at the next line.
     #[structopt(short, long)]
     fail_fast: bool,
 
