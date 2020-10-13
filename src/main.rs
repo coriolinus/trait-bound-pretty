@@ -1,6 +1,5 @@
 use std::io::{stdin, stdout, BufRead, BufReader, BufWriter, Write};
 
-use anyhow::Result;
 use structopt::StructOpt;
 
 use trait_bound_pretty::{
@@ -31,7 +30,8 @@ struct Opt {
     // bare_item: bool,
 }
 
-fn main() -> Result<()> {
+/// operate as a line-oriented stream editor, pretty-printing recognized inputs
+fn process_lines() -> std::io::Result<()> {
     let opt = Opt::from_args();
 
     let parser = Box::new(E0277Parser::new());
@@ -43,45 +43,34 @@ fn main() -> Result<()> {
     let stdout = stdout();
     let writer = stdout.lock();
     let mut writer = BufWriter::new(writer);
+
     for line in reader.lines() {
-        let line = match line {
-            Ok(line) => line,
-            Err(_) => {
-                // io errors on reading mean that our stdin got closed;
-                // just abort
-                break;
-            }
-        };
+        let line = line?;
         match parser.parse(line.trim()) {
             Ok(item) => {
-                if let Err(_) = item.pretty_to(&mut writer) {
-                    // io errors on writing mean that our stdout got closed;
-                    // just abort
-                    break;
-                }
-                if let Err(_) = write!(writer, "\n") {
-                    break;
-                }
+                item.pretty_to(&mut writer)?;
+                write!(writer, "\n")?;
             }
             Err(err) => {
                 if opt.strict {
-                    if let Err(_) = writeln!(writer, "{:#?}", err) {
-                        break;
-                    }
+                    writeln!(writer, "{:#?}", err)?;
                 } else {
-                    if let Err(_) = writeln!(writer, "{}", line) {
-                        break;
-                    }
+                    writeln!(writer, "{}", line)?;
                 }
                 if opt.fail_fast {
                     break;
                 }
             }
         }
-        if let Err(_) = writer.flush() {
-            break;
-        }
+        writer.flush()?;
     }
 
     Ok(())
+}
+
+
+fn main() {
+    // if there's an IO error when processing the lines, then either stdin or stdout was closed.
+    // we just want a graceful exit in that case; no need to complain to the user.
+    let _ = process_lines();
 }

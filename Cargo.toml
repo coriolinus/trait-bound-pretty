@@ -6,7 +6,6 @@ edition = "2018"
 build = "build.rs" # LALRPOP preprocessing
 
 [dependencies]
-anyhow = "1.0.33"
 lalrpop-util = "0.19.1"
 regex = "1"
 rstest = "0.6.4"
