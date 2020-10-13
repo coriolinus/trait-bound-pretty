@@ -55,7 +55,7 @@ fn process_lines() -> std::io::Result<()> {
             match item_parser.parse(line.trim()) {
                 Ok(item) => {
                     item.pretty_to(&mut writer)?;
-                    write!(writer, "\n")?;
+                    writer.write_all(b"\n")?;
                 }
                 Err(err) => {
                     if opt.strict {
@@ -72,7 +72,7 @@ fn process_lines() -> std::io::Result<()> {
             match e0277_parser.parse(line.trim()) {
                 Ok(item) => {
                     item.pretty_to(&mut writer)?;
-                    write!(writer, "\n")?;
+                    writer.write_all(b"\n")?;
                 }
                 Err(err) => {
                     if opt.strict {

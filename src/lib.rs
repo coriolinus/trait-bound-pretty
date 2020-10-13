@@ -41,32 +41,32 @@ impl<'a> Bound<'a> {
     ) -> Result<(), std::io::Error> {
         indent(indent_level, writer)?;
         match self {
-            Self::Lifetime(lifetime) => write!(writer, "{}", lifetime),
+            Self::Lifetime(lifetime) => writer.write_all(lifetime.as_bytes()),
             Self::Item(item) => item.pretty_internal(indent_level, writer),
             Self::Reference {
                 lifetime,
                 mut_,
                 item,
             } => {
-                write!(writer, "{}", '&')?;
-                write!(writer, "{}", lifetime)?;
+                writer.write_all(b"&")?;
+                writer.write_all(lifetime.as_bytes())?;
                 if *mut_ {
-                    write!(writer, "{}", " mut")?;
+                    writer.write_all(b" mut")?;
                 }
-                write!(writer, "{}", ' ')?;
+                writer.write_all(b" ")?;
                 item.pretty_internal(indent_level, writer)
             }
             Self::Tuple(bounds) => {
-                write!(writer, "{}", "(\n")?;
+                writer.write_all(b"(\n")?;
                 for (idx, bound) in bounds.iter().enumerate() {
                     bound.pretty_internal(indent_level + 1, writer)?;
                     if idx != bounds.len() - 1 {
-                        write!(writer, "{}", ',')?;
+                        writer.write_all(b",")?;
                     }
-                    write!(writer, "{}", '\n')?;
+                    writer.write_all(b"\n")?;
                 }
                 indent(indent_level, writer)?;
-                write!(writer, "{}", ')')
+                writer.write_all(b")")
             }
         }
     }
@@ -87,22 +87,22 @@ impl<'a> Item<'a> {
         writer: &mut Writer,
     ) -> Result<(), std::io::Error> {
         for (idx, component) in self.name.iter().enumerate().rev() {
-            write!(writer, "{}", component)?;
+            writer.write_all(component.as_bytes())?;
             if idx != 0 {
-                write!(writer, "{}", "::")?;
+                writer.write_all(b"::")?;
             }
         }
         if !self.generic_bounds.is_empty() {
-            write!(writer, "{}", "<\n")?;
+            writer.write_all(b"<\n")?;
             for (idx, bound) in self.generic_bounds.iter().enumerate() {
                 bound.pretty_internal(indent_level + 1, writer)?;
                 if idx != self.generic_bounds.len() - 1 {
-                    write!(writer, "{}", ',')?;
+                    writer.write_all(b",")?;
                 }
-                write!(writer, "{}", '\n')?;
+                writer.write_all(b"\n")?;
             }
             indent(indent_level, writer)?;
-            write!(writer, "{}", '>')?;
+            writer.write_all(b">")?;
         }
         Ok(())
     }
@@ -114,10 +114,10 @@ impl<'a> Pretty for Item<'a> {
     }
 }
 
-const INDENT: &str = "  ";
+const INDENT: &'static [u8] = b"  ";
 fn indent<Writer: Write>(indent_level: usize, writer: &mut Writer) -> Result<(), std::io::Error> {
     for _ in 0..indent_level {
-        write!(writer, "{}", INDENT)?;
+        writer.write_all(INDENT)?;
     }
     Ok(())
 }
@@ -131,9 +131,11 @@ pub struct E0277<'a> {
 impl<'a> Pretty for E0277<'a> {
     /// Pretty-print this Item to the supplied writer.
     fn pretty_to<Writer: Write>(&self, writer: &mut Writer) -> Result<(), std::io::Error> {
-        write!(writer, "error[E0277]: the item:\n{}", INDENT)?;
+        writer.write_all(b"error[E0277]: the item:\n")?;
+        writer.write_all(INDENT)?;
         self.item.pretty_internal(1, writer)?;
-        write!(writer, "\ndoes not satisfy the trait bound:\n{}", INDENT)?;
+        writer.write_all(b"\ndoes not satisfy the trait bound:\n")?;
+        writer.write_all(INDENT)?;
         self.trait_bound.pretty_internal(1, writer)?;
         Ok(())
     }
