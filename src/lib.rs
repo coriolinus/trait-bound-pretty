@@ -5,12 +5,13 @@ use lalrpop_util::lalrpop_mod;
 lalrpop_mod!(pub parser);
 #[cfg(test)]
 mod parser_tests;
+pub mod parser_trait;
 
 pub trait Pretty {
     /// Pretty-print `Self` to the supplied writer.
     ///
     /// This function must only ever write valid utf8 strings.
-    fn pretty_to<Writer: Write>(&self, writer: &mut Writer) -> Result<(), std::io::Error>;
+    fn pretty_to(&self, writer: &mut dyn Write) -> Result<(), std::io::Error>;
 
     /// Pretty-print `Self` into a new string.
     fn pretty(&self) -> String {
@@ -34,7 +35,7 @@ pub enum Bound<'a> {
 }
 
 impl<'a> Bound<'a> {
-    fn pretty_internal<Writer: Write>(
+    fn pretty_internal<Writer: Write + ?Sized>(
         &self,
         indent_level: usize,
         writer: &mut Writer,
@@ -81,7 +82,7 @@ pub struct Item<'a> {
 }
 
 impl<'a> Item<'a> {
-    fn pretty_internal<Writer: Write>(
+    fn pretty_internal<Writer: Write + ?Sized>(
         &self,
         indent_level: usize,
         writer: &mut Writer,
@@ -109,13 +110,13 @@ impl<'a> Item<'a> {
 }
 
 impl<'a> Pretty for Item<'a> {
-    fn pretty_to<Writer: Write>(&self, writer: &mut Writer) -> Result<(), std::io::Error> {
+    fn pretty_to(&self, writer: &mut dyn Write) -> Result<(), std::io::Error> {
         self.pretty_internal(0, writer)
     }
 }
 
 const INDENT: &str = "  ";
-fn indent<Writer: Write>(indent_level: usize, writer: &mut Writer) -> Result<(), std::io::Error> {
+fn indent<Writer: Write + ?Sized>(indent_level: usize, writer: &mut Writer) -> Result<(), std::io::Error> {
     for _ in 0..indent_level {
         write!(writer, "{}", INDENT)?;
     }
@@ -130,7 +131,7 @@ pub struct E0277<'a> {
 
 impl<'a> Pretty for E0277<'a> {
     /// Pretty-print this Item to the supplied writer.
-    fn pretty_to<Writer: Write>(&self, writer: &mut Writer) -> Result<(), std::io::Error> {
+    fn pretty_to(&self, writer: &mut dyn Write) -> Result<(), std::io::Error> {
         write!(writer, "error[E0277]: the item:\n{}", INDENT)?;
         self.item.pretty_internal(1, writer)?;
         write!(writer, "\ndoes not satisfy the trait bound:\n{}", INDENT)?;
