@@ -1,4 +1,4 @@
-use super::parser::*;
+use crate::{Pretty, parser::*};
 
 use rstest::rstest;
 
