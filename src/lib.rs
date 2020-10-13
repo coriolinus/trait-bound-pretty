@@ -6,6 +6,21 @@ lalrpop_mod!(pub parser);
 #[cfg(test)]
 mod parser_tests;
 
+pub trait Pretty {
+    /// Pretty-print `Self` to the supplied writer.
+    ///
+    /// This function must only ever write valid utf8 strings.
+    fn pretty_to<Writer: Write>(&self, writer: &mut Writer) -> Result<(), std::io::Error>;
+
+    /// Pretty-print `Self` into a new string.
+    fn pretty(&self) -> String {
+        let mut writer = Vec::new();
+        self.pretty_to(&mut writer)
+            .expect("writing to Vec<u8> should never fail");
+        String::from_utf8(writer).expect("we only ever write valid utf8")
+    }
+}
+
 #[derive(Debug)]
 pub enum Bound<'a> {
     Lifetime(&'a str),
@@ -66,19 +81,6 @@ pub struct Item<'a> {
 }
 
 impl<'a> Item<'a> {
-    /// Pretty-print this Item into a new string.
-    pub fn pretty(&self) -> String {
-        let mut writer = Vec::new();
-        self.pretty_internal(0, &mut writer)
-            .expect("writing to Vec<u8> should never fail");
-        String::from_utf8(writer).expect("we only ever write valid utf8")
-    }
-
-    /// Pretty-print this Item to the supplied writer.
-    pub fn pretty_to<Writer: Write>(&self, writer: &mut Writer) -> Result<(), std::io::Error> {
-        self.pretty_internal(0, writer)
-    }
-
     fn pretty_internal<Writer: Write>(
         &self,
         indent_level: usize,
@@ -106,6 +108,12 @@ impl<'a> Item<'a> {
     }
 }
 
+impl<'a> Pretty for Item<'a> {
+    fn pretty_to<Writer: Write>(&self, writer: &mut Writer) -> Result<(), std::io::Error> {
+        self.pretty_internal(0, writer)
+    }
+}
+
 const INDENT: &str = "  ";
 fn indent<Writer: Write>(indent_level: usize, writer: &mut Writer) -> Result<(), std::io::Error> {
     for _ in 0..indent_level {
@@ -120,17 +128,9 @@ pub struct E0277<'a> {
     trait_bound: Item<'a>,
 }
 
-impl<'a> E0277<'a> {
-    /// Pretty-print this Item into a new string.
-    pub fn pretty(&self) -> String {
-        let mut writer = Vec::new();
-        self.pretty_to(&mut writer)
-            .expect("writing to Vec<u8> should never fail");
-        String::from_utf8(writer).expect("we only ever write valid utf8")
-    }
-
+impl<'a> Pretty for E0277<'a> {
     /// Pretty-print this Item to the supplied writer.
-    pub fn pretty_to<Writer: Write>(&self, writer: &mut Writer) -> Result<(), std::io::Error> {
+    fn pretty_to<Writer: Write>(&self, writer: &mut Writer) -> Result<(), std::io::Error> {
         write!(writer, "error[E0277]: the item:\n{}", INDENT)?;
         self.item.pretty_internal(1, writer)?;
         write!(writer, "\ndoes not satisfy the trait bound:\n{}", INDENT)?;
